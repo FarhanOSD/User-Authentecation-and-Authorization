@@ -45,7 +45,7 @@ export const singup = async (req, res) => {
       },
     });
   } catch (error) {
-    response.status(400).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -66,15 +66,16 @@ export const verifyEmail = async (req, res) => {
     await user.save();
     await sendWelcomeEmail(user.email, user.name);
     res.status(200).json({
-      success: true, message: 'Email verified successfully',
+      success: true,
+      message: 'Email verified successfully',
       user: {
-      ...user, _doc,
+        ...user._doc,
         password: null,
-    }
-     });
+      },
+    });
     
   } catch (error) {
-    
+    throw new Error('Invalid verification code');
   }
 }
 
@@ -102,10 +103,16 @@ export const login = async (req, res) => {
     // Generate token and respond
     generateTokenAndSandCode(res, user._id);
 
-    
+    user.lastLogin = new Date();
+    await user.save();
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      user: {
+        ...user._doc,
+        password: null,
+      }
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
